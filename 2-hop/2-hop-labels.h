@@ -27,18 +27,27 @@ struct Edge {
     }
 };
 
-struct Node {
+class Node {
+public:
     bool tarjan;
     bool bfs;
     bool reverse_bfs;
     int data;
     vector<int> inNodes, outNodes;
     Edge *firIn, *firOut;
+    vector<string> attributes;
 
     Node(int data) {
         this->data = data;
         this->tarjan = this->bfs = this->reverse_bfs = false;
         this->firIn = this->firOut = nullptr;
+    }
+
+    Node(int data, vector<string> *attributes) {
+        this->data = data;
+        this->tarjan = this->bfs = this->reverse_bfs = false;
+        this->firIn = this->firOut = nullptr;
+        this->attributes = *attributes;
     }
 };
 
@@ -47,14 +56,22 @@ struct Graph {
     map<string, int> numberMap;
     map<int, string> nameMap;
     map<int, Node*> nodes;
-} graph;
+};
 
+class LabeledGraphList {
+public:
+    map<string, Graph> graphs;
+    LabeledGraphList(vector<string> labels);
+};
 
-void tarjan(Node*, map<int, int>&, map<int, int>&, stack<int>&, vector<vector<int> >&, map<int, bool>&);
-void combine_scc_node(vector<vector<int> >&);
-bool query(int outNodeNum, int inNodeNum);
-void search_out_node(Node*);
-void search_in_node(Node*);
+void two_hop_label(Graph*);
+void tarjan(Graph*,Node*, map<int, int>&, map<int, int>&, stack<int>&, vector<vector<int> >&, map<int, bool>&);
+void combine_scc_node(Graph*, vector<vector<int> >&);
+bool query(Graph*, int outNodeNum, int inNodeNum);
+void search_out_node(Graph*, Node*);
+void search_in_node(Graph*, Node*);
+
+bool constrainedQuery(LabeledGraphList &, int outNodeNum, int inNodeNum);
 
 
 inline void insert_edge(Node* node, Edge* edge)
@@ -72,7 +89,7 @@ inline void insert_reverse_edge(Node* node, Edge* edge)
     edge->tailLink = last_edge;
 }
 
-inline Node* init_inexistent_node(int nodeNum)
+inline Node* init_inexistent_node(Graph &graph, int nodeNum)
 {
     if (graph.nodes[nodeNum] == nullptr) {
         graph.nodes[nodeNum] = new Node(nodeNum);
