@@ -61,17 +61,20 @@ struct Graph {
 class LabeledGraphList {
 public:
     map<string, Graph> graphs;
-    LabeledGraphList(vector<string> labels);
+    explicit LabeledGraphList(vector<string> labels);
 };
 
 void two_hop_label(Graph*);
+
+void generata_one_label_index(LabeledGraphList &graph);
 void tarjan(Graph*,Node*, map<int, int>&, map<int, int>&, stack<int>&, vector<vector<int> >&, map<int, bool>&);
 void combine_scc_node(Graph*, vector<vector<int> >&);
 bool query(Graph*, int outNodeNum, int inNodeNum);
 void search_out_node(Graph*, Node*);
 void search_in_node(Graph*, Node*);
 
-bool constrainedQuery(LabeledGraphList &, int outNodeNum, int inNodeNum);
+void input_and_query(Graph *graph);
+bool constrainedQuery(Graph &, LabeledGraphList &, int outNodeNum, int inNodeNum, vector<string>& labels);
 
 
 inline void insert_edge(Node* node, Edge* edge)

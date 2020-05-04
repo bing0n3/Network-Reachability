@@ -53,7 +53,24 @@ int main(int argc, char *argv[]) {
         insert_edge(outNode, edge);
         insert_reverse_edge(inNode, edge);
     }
+
+    // generate labeling
     two_hop_label(&graph);
+    input_and_query(&graph);
+
+
+    // with label
+//    LabeledGraphList lableling_graphs =  LabeledGraphList(vector<string>({"1", "2", "3"}));
+//    vector<string> labels({"1", "2"});
+//    generata_one_label_index(lableling_graphs);
+//    constrainedQuery(graph, lableling_graphs, 1, 2, labels);
+}
+
+
+void generata_one_label_index(LabeledGraphList &graphs) {
+    for (auto& graph: graphs.graphs) {
+        two_hop_label(&graph.second);
+    }
 }
 
 void two_hop_label(Graph* graph) {
@@ -85,7 +102,10 @@ void two_hop_label(Graph* graph) {
     clock_t finish = clock();
 
     cout << "Total time: " << (finish-start)/CLOCKS_PER_SEC << " seconds" << endl;
+}
 
+
+void input_and_query(Graph* graph) {
     cout << "Please enter query data(e.g. from 1 to 2 => 1 2)" << endl;
     int inNodeNum, outNodeNum;
     string inNodeID, outNodeID;
@@ -262,6 +282,36 @@ bool query(Graph *graph, int outNodeNum, int inNodeNum) {
     return !result.empty();
 }
 
-bool constrainedQuery(LabeledGraphList &, int outNodeNum, int inNodeNum) {
-    return true;
+
+// queryNaive
+bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, int inNodeNum, vector<string>& labels) {
+    stack<int> st = stack<int>({outNodeNum});
+    map<int,bool> accessed;
+    accessed[outNodeNum] = true;
+
+    while(!st.empty()) {
+        int vNum = st.top();
+        st.pop();
+
+        for (auto label : labels) {
+            // get graph
+            Graph *cur_graph = &graphs.graphs[label];
+            Node *outNode = cur_graph->nodes[graph.nodes[outNodeNum]->data];
+
+            vector<int> out_vec(outNode->outNodes);
+
+            for (auto vec : out_vec) {
+                if(!accessed[vec]) {
+                    accessed[vec] = true;
+                    st.push(vec);
+                }
+
+                if(accessed[graph.nodes[inNodeNum]->data]) {
+                    return true;
+                }
+            }
+        }
+
+    }
+    return false;
 }
