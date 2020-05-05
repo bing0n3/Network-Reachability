@@ -326,7 +326,7 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
             }
 
 
-            vector<int> neighbors = neighbors_with_diff_label(graph, graph.nodes[vNum]);
+            vector<int> neighbors = neighbors_with_diff_label(graph, graph.nodes[vNum], labels);
 
             for (auto neighbor: neighbors) {
                 st.push(neighbor);
@@ -337,7 +337,7 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
             if (vNum != cur_graph.nodes[vNum]->data) {
                 accessed[cur_graph.nodes[vNum]->data] = true;
 
-                vector<int> neibors = neighbors_with_diff_label(graph, graph.nodes[cur_graph.nodes[vNum]->data]);
+                vector<int> neibors = neighbors_with_diff_label(graph, graph.nodes[cur_graph.nodes[vNum]->data], labels);
                 for (auto neighbor: neibors ){
                     accessed[neighbor] = true;
                     st.push(neighbor);
@@ -373,19 +373,25 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 }
 
 
-vector<int> neighbors_with_diff_label(Graph& graph, Node* node){
+vector<int> neighbors_with_diff_label(Graph& graph, Node* node,   vector<string> &label_set){
     map<int, bool> accessed;
-    vector<int> result;
+    vector<int>  result;
     vector<string> node_attributes(node->attributes);
 
-    vector<string> lap;
+    vector<string> lap, in_set;
 
     for (Edge *edge = node->firOut; edge != nullptr; edge = edge->headLink) {
 
+        // is label has same lap
         set_intersection(node_attributes.begin(), node_attributes.end(),
                          graph.nodes[edge->tailVex]->attributes.begin(), graph.nodes[edge->tailVex]->attributes.end(),
                          back_inserter(lap));
-        if (!accessed[edge->tailVex] && lap.empty() ) {
+
+        // is label in set?
+        set_intersection(label_set.begin(), label_set.end(),
+                        graph.nodes[edge->tailVex]->attributes.begin(), graph.nodes[edge->tailVex]->attributes.end(),
+                        back_inserter(in_set));
+        if (!accessed[edge->tailVex] && lap.empty() && !in_set.empty() ) {
             result.push_back(edge->tailVex);
         }
     }

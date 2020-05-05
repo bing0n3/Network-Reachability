@@ -73,7 +73,7 @@ void search_in_node(Graph*, Node*);
 void read_labeling_graph(char*);
 void input_and_query(Graph *graph);
 bool constrainedQuery(Graph &, LabeledGraphList &, int outNodeNum, int inNodeNum, vector<string>& labels);
-vector<int> neighbors_with_diff_label(Graph& graph, Node* node);
+vector<int> neighbors_with_diff_label(Graph& graph, Node* node, vector<string>&);
 
 inline void insert_edge(Node* node, Edge* edge)
 {
