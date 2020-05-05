@@ -132,11 +132,9 @@ void read_labeling_graph(char *argv) {
 //    Graph *old_graph = &graph;
 //    two_hop_label(&graph);
     generata_one_label_index(graphsList);
-    vector<string> queryLabel({"1"});
-    for (auto const &pair: graphsList.graphs) {
-        cout << pair.first << " ";
-    }
-    cout << endl << "Result is " << constrainedQuery(graph, graphsList, 5, 6, queryLabel) << endl << "??";
+    vector<string> queryLabel({"1", "2"});
+
+    cout << endl << "Result is " << constrainedQuery(graph, graphsList, 1, 7, queryLabel) << endl;
 //    cout << query(&graphsList.graphs["1"], 4, 6) << endl;
 
 }
@@ -371,17 +369,32 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
         for (auto label : labels) {
             // get graph
             Graph &cur_graph = graphs.graphs[label];
-            Node *outNode = cur_graph.nodes[cur_graph.nodes[outNodeNum]->data];
+
+            //whether vertex exist in this graph
+            if(cur_graph.nodes.find(vNum) == cur_graph.nodes.end()) {
+//                cout << "111" << label<<endl;
+                continue;
+            }
+
+            // consider combined ssc
+            if (vNum != cur_graph.nodes[vNum]->data) {
+                accessed[cur_graph.nodes[vNum]->data] = true;
+            }
+
+            Node *outNode = cur_graph.nodes[cur_graph.nodes[vNum]->data];
 
             vector<int> out_vec(outNode->outNodes);
+
+
+//            cout << out_vec[0];
+
 
             for (auto vec : out_vec) {
                 if(!accessed[vec]) {
                     accessed[vec] = true;
                     st.push(vec);
                 }
-
-                if(accessed[cur_graph.nodes[inNodeNum]->data]) {
+                if(cur_graph.nodes.find(inNodeNum) !=cur_graph.nodes.end() && accessed[cur_graph.nodes[inNodeNum]->data]) {
                     return true;
                 }
             }
