@@ -13,54 +13,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-//    Graph graph = Graph();
-//
-//    ifstream fin(argv[1]);
-//
-//    cout << "Loading data from file " << argv[1] << "..." << endl;
-//    fin >> graph.nodeNum >> graph.edgeNum;
-//
-//    int numberCount = 0;
-//    string inNodeID, outNodeID;
-//    int inNodeNum, outNodeNum;
-//    Node *inNode = nullptr, *outNode = nullptr;
-//
-//
-//    for (int j = 0; j < graph.edgeNum; j++) {
-//        fin >> outNodeID >> inNodeID;
-//        if (graph.numberMap[outNodeID] == 0) {
-//            outNodeNum = graph.numberMap[outNodeID] = ++numberCount;
-//            graph.nameMap[outNodeNum] = outNodeID;
-//        } else {
-//            outNodeNum = graph.numberMap[outNodeID];
-//        }
-//
-//        if (graph.numberMap[inNodeID] == 0) {
-//            inNodeNum = graph.numberMap[inNodeID] = ++numberCount;
-//            graph.nameMap[inNodeNum] = inNodeID;
-//        } else {
-//            inNodeNum = graph.numberMap[inNodeID];
-//        }
-//
-//        outNode = init_inexistent_node(graph, outNodeNum);
-//        inNode = init_inexistent_node(graph, inNodeNum);
-//        Edge *edge = new Edge(outNodeNum, inNodeNum);
-//
-//        insert_edge(outNode, edge);
-//        insert_reverse_edge(inNode, edge);
-//    }
-//
-//    // generate labeling
-//    two_hop_label(&graph);
-//    input_and_query(&graph);
-//
-
-    // with label
-//    LabeledGraphList lableling_graphs =  LabeledGraphList(vector<string>({"1", "2", "3"}));
-//    vector<string> labels({"1", "2"});
-//    generata_one_label_index(lableling_graphs);
-//    constrainedQuery(graph, lableling_graphs, 1, 2, labels);
-//    cout << "hi";
     read_labeling_graph(argv[1]);
 }
 
@@ -87,14 +39,12 @@ void read_labeling_graph(char *argv) {
                 vector<string> label({arr[2]});
 //                cout << arr[0] << endl;
                 // initial node with label
-                if (graphsList.graphs.count(arr[2]) == 0) {
+                if (graphsList.graphs.find(arr[2]) == graphsList.graphs.end()) {
                     Graph new_graph =  Graph();
                     graphsList.graphs[arr[2]] = new_graph;
-                    init_inexistent_label_node(new_graph, stoi(arr[1]), label);
-                    init_inexistent_label_node(new_graph, stoi(arr[2]), label);
+                    init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[1]), label);
                 } else {
                     init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[1]), label);
-                    init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[2]), label);
                 }
                 init_inexistent_label_node(graph, stoi(arr[1]), label);
             } else if (arr[0] == "e") {
@@ -132,9 +82,9 @@ void read_labeling_graph(char *argv) {
 //    Graph *old_graph = &graph;
 //    two_hop_label(&graph);
     generata_one_label_index(graphsList);
-    vector<string> queryLabel({"1", "2"});
+    vector<string> queryLabel({"1","2"});
 
-    cout << endl << "Result is " << constrainedQuery(graph, graphsList, 1, 7, queryLabel) << endl;
+    cout << endl << "Result is " << constrainedQuery(graph, graphsList, 1, 6, queryLabel) << endl;
 //    cout << query(&graphsList.graphs["1"], 4, 6) << endl;
 
 }
@@ -372,13 +322,27 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 
             //whether vertex exist in this graph
             if(cur_graph.nodes.find(vNum) == cur_graph.nodes.end()) {
-//                cout << "111" << label<<endl;
                 continue;
+            }
+
+
+            vector<int> neighbors = neighbors_with_diff_label(graph, graph.nodes[vNum]);
+
+            for (auto neighbor: neighbors) {
+                st.push(neighbor);
+                accessed[neighbor] = true;
             }
 
             // consider combined ssc
             if (vNum != cur_graph.nodes[vNum]->data) {
                 accessed[cur_graph.nodes[vNum]->data] = true;
+
+                vector<int> neibors = neighbors_with_diff_label(graph, graph.nodes[cur_graph.nodes[vNum]->data]);
+                for (auto neighbor: neibors ){
+                    accessed[neighbor] = true;
+                    st.push(neighbor);
+                }
+
             }
 
             Node *outNode = cur_graph.nodes[cur_graph.nodes[vNum]->data];
@@ -388,6 +352,10 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 
 //            cout << out_vec[0];
 
+
+            if(cur_graph.nodes.find(inNodeNum) !=cur_graph.nodes.end() && accessed[cur_graph.nodes[inNodeNum]->data]) {
+                return true;
+            }
 
             for (auto vec : out_vec) {
                 if(!accessed[vec]) {
@@ -402,4 +370,25 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 
     }
     return false;
+}
+
+
+vector<int> neighbors_with_diff_label(Graph& graph, Node* node){
+    map<int, bool> accessed;
+    vector<int> result;
+    vector<string> node_attributes(node->attributes);
+
+    vector<string> lap;
+
+    for (Edge *edge = node->firOut; edge != nullptr; edge = edge->headLink) {
+
+        set_intersection(node_attributes.begin(), node_attributes.end(),
+                         graph.nodes[edge->tailVex]->attributes.begin(), graph.nodes[edge->tailVex]->attributes.end(),
+                         back_inserter(lap));
+        if (!accessed[edge->tailVex] && lap.empty() ) {
+            result.push_back(edge->tailVex);
+        }
+    }
+
+    return result;
 }
