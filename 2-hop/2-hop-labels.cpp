@@ -1,14 +1,10 @@
 #include "2-hop-labels.h"
-
+#include <sstream>
 
 
 // constructor for graphlist for each label/
 // build 2 hop index for each label
-LabeledGraphList::LabeledGraphList(vector<string> labels) {
-    for (auto label: labels) {
-        this->graphs[label] = Graph();
-    }
-}
+
 
 
 int main(int argc, char *argv[]) {
@@ -17,55 +13,133 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    Graph graph = Graph();
-
-    ifstream fin(argv[1]);
-
-    cout << "Loading data from file " << argv[1] << "..." << endl;
-    fin >> graph.nodeNum >> graph.edgeNum;
-
-    int numberCount = 0;
-    string inNodeID, outNodeID;
-    int inNodeNum, outNodeNum;
-    Node *inNode = nullptr, *outNode = nullptr;
-
-
-    for (int j = 0; j < graph.edgeNum; j++) {
-        fin >> outNodeID >> inNodeID;
-        if (graph.numberMap[outNodeID] == 0) {
-            outNodeNum = graph.numberMap[outNodeID] = ++numberCount;
-            graph.nameMap[outNodeNum] = outNodeID;
-        } else {
-            outNodeNum = graph.numberMap[outNodeID];
-        }
-
-        if (graph.numberMap[inNodeID] == 0) {
-            inNodeNum = graph.numberMap[inNodeID] = ++numberCount;
-            graph.nameMap[inNodeNum] = inNodeID;
-        } else {
-            inNodeNum = graph.numberMap[inNodeID];
-        }
-
-        outNode = init_inexistent_node(graph, outNodeNum);
-        inNode = init_inexistent_node(graph, inNodeNum);
-        Edge *edge = new Edge(outNodeNum, inNodeNum);
-
-        insert_edge(outNode, edge);
-        insert_reverse_edge(inNode, edge);
-    }
-
-    // generate labeling
-    two_hop_label(&graph);
-    input_and_query(&graph);
-
+//    Graph graph = Graph();
+//
+//    ifstream fin(argv[1]);
+//
+//    cout << "Loading data from file " << argv[1] << "..." << endl;
+//    fin >> graph.nodeNum >> graph.edgeNum;
+//
+//    int numberCount = 0;
+//    string inNodeID, outNodeID;
+//    int inNodeNum, outNodeNum;
+//    Node *inNode = nullptr, *outNode = nullptr;
+//
+//
+//    for (int j = 0; j < graph.edgeNum; j++) {
+//        fin >> outNodeID >> inNodeID;
+//        if (graph.numberMap[outNodeID] == 0) {
+//            outNodeNum = graph.numberMap[outNodeID] = ++numberCount;
+//            graph.nameMap[outNodeNum] = outNodeID;
+//        } else {
+//            outNodeNum = graph.numberMap[outNodeID];
+//        }
+//
+//        if (graph.numberMap[inNodeID] == 0) {
+//            inNodeNum = graph.numberMap[inNodeID] = ++numberCount;
+//            graph.nameMap[inNodeNum] = inNodeID;
+//        } else {
+//            inNodeNum = graph.numberMap[inNodeID];
+//        }
+//
+//        outNode = init_inexistent_node(graph, outNodeNum);
+//        inNode = init_inexistent_node(graph, inNodeNum);
+//        Edge *edge = new Edge(outNodeNum, inNodeNum);
+//
+//        insert_edge(outNode, edge);
+//        insert_reverse_edge(inNode, edge);
+//    }
+//
+//    // generate labeling
+//    two_hop_label(&graph);
+//    input_and_query(&graph);
+//
 
     // with label
 //    LabeledGraphList lableling_graphs =  LabeledGraphList(vector<string>({"1", "2", "3"}));
 //    vector<string> labels({"1", "2"});
 //    generata_one_label_index(lableling_graphs);
 //    constrainedQuery(graph, lableling_graphs, 1, 2, labels);
+//    cout << "hi";
+    read_labeling_graph(argv[1]);
 }
 
+void read_labeling_graph(char *argv) {
+    Graph graph;
+    Node *inNode = nullptr, *outNode = nullptr;
+    LabeledGraphList graphsList;
+    fstream newfile;
+    newfile.open(argv, ios::in);
+    cout << "Loading data from file " << argv << "..." << endl;
+    if (newfile.is_open()) {
+        string tp;
+        while (getline(newfile, tp)) {
+            stringstream ssin(tp);
+
+            string arr[3];
+            int i = 0;
+            while (ssin.good() && i < 3){
+                ssin >> arr[i];
+                ++i;
+            }
+
+            if (arr[0] == "v") {
+                vector<string> label({arr[2]});
+//                cout << arr[0] << endl;
+                // initial node with label
+                if (graphsList.graphs.count(arr[2]) == 0) {
+                    Graph new_graph =  Graph();
+                    graphsList.graphs[arr[2]] = new_graph;
+                    init_inexistent_label_node(new_graph, stoi(arr[1]), label);
+                    init_inexistent_label_node(new_graph, stoi(arr[2]), label);
+                } else {
+                    init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[1]), label);
+                    init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[2]), label);
+                }
+                init_inexistent_label_node(graph, stoi(arr[1]), label);
+            } else if (arr[0] == "e") {
+                // add edge to graph
+                int outNodeNum = stoi(arr[1]);
+                int inNodeNum = stoi(arr[2]);
+
+                outNode = graph.nodes[outNodeNum];
+                inNode = graph.nodes[inNodeNum];
+
+                Edge *edge = new Edge(outNodeNum , inNodeNum);
+                insert_edge(graph.nodes[outNodeNum], edge);
+                insert_reverse_edge(graph.nodes[inNodeNum], edge);
+                // iterate labels
+
+                vector<string> out_vec(outNode->attributes);
+                vector<string> in_vec(inNode->attributes);
+                vector<string> result;
+
+                set_intersection(in_vec.begin(), in_vec.end(),
+                        out_vec.begin(), out_vec.end(),
+                        back_inserter(result));
+
+
+                if (!result.empty()) {
+                    for (const auto& label: result) {
+                        edge = new Edge(outNodeNum , inNodeNum);
+                        insert_edge(graphsList.graphs[label].nodes[outNodeNum], edge);
+                        insert_reverse_edge(graphsList.graphs[label].nodes[inNodeNum], edge);
+                    }
+                }
+            }
+        }
+    }
+//    Graph *old_graph = &graph;
+//    two_hop_label(&graph);
+    generata_one_label_index(graphsList);
+    vector<string> queryLabel({"1"});
+    for (auto const &pair: graphsList.graphs) {
+        cout << pair.first << " ";
+    }
+    cout << endl << "Result is " << constrainedQuery(graph, graphsList, 5, 6, queryLabel) << endl << "??";
+//    cout << query(&graphsList.graphs["1"], 4, 6) << endl;
+
+}
 
 void generata_one_label_index(LabeledGraphList &graphs) {
     for (auto& graph: graphs.graphs) {
@@ -118,37 +192,38 @@ void input_and_query(Graph* graph) {
     }
 }
 
-void tarjan(Graph* graph, Node *node, map<int, int> &def, map<int, int> &low, stack<int> &st,
-            vector<vector<int> > &scc, map<int, bool> &stack_sign) {
+void tarjan(Graph* graph, Node *node, map<int, int> &dfn, map<int, int> &low, stack<int> &st,
+            vector<vector<int> > &scc, map<int, bool> &inStack) {
     if (node == nullptr) {
         cout << "In tarjan function: the variable 'node' is nullptr" << endl;
         exit(1);
     }
 
     static int index = 0;
-    def[node->data] = low[node->data] = ++index;
+    // root vertex
+    dfn[node->data] = low[node->data] = ++index;
     st.push(node->data);
-    stack_sign[node->data] = true;
+    inStack[node->data] = true;
     node->tarjan = true;
 
     Edge *edge = node->firOut;
     while (edge != nullptr) {
         Node *next_node = graph->nodes[edge->tailVex];
         if (!next_node->tarjan) {
-            tarjan(graph, next_node, def, low, st, scc, stack_sign);
+            tarjan(graph, next_node, dfn, low, st, scc, inStack);
             low[node->data] = min(low[node->data], low[next_node->data]);
-        } else if (stack_sign[next_node->data]) {
-            low[node->data] = min(low[node->data], def[next_node->data]);
+        } else if (inStack[next_node->data]) {
+            low[node->data] = min(low[node->data], dfn[next_node->data]);
         }
 
         edge = edge->headLink;
     }
 
-    if (def[node->data] == low[node->data]) {
+    if (dfn[node->data] == low[node->data]) {
         vector<int> new_scc;
         while (true) {
             int top_data = st.top();
-            stack_sign[top_data] = false;
+            inStack[top_data] = false;
             new_scc.push_back(top_data);
             st.pop();
             if (top_data == node->data) {
@@ -287,7 +362,7 @@ bool query(Graph *graph, int outNodeNum, int inNodeNum) {
 bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, int inNodeNum, vector<string>& labels) {
     stack<int> st = stack<int>({outNodeNum});
     map<int,bool> accessed;
-    accessed[outNodeNum] = true;
+    accessed[graph.nodes[outNodeNum]->data] = true;
 
     while(!st.empty()) {
         int vNum = st.top();
@@ -295,8 +370,8 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 
         for (auto label : labels) {
             // get graph
-            Graph *cur_graph = &graphs.graphs[label];
-            Node *outNode = cur_graph->nodes[graph.nodes[outNodeNum]->data];
+            Graph &cur_graph = graphs.graphs[label];
+            Node *outNode = cur_graph.nodes[cur_graph.nodes[outNodeNum]->data];
 
             vector<int> out_vec(outNode->outNodes);
 
@@ -306,7 +381,7 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
                     st.push(vec);
                 }
 
-                if(accessed[graph.nodes[inNodeNum]->data]) {
+                if(accessed[cur_graph.nodes[inNodeNum]->data]) {
                     return true;
                 }
             }

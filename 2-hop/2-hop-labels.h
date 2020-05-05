@@ -43,11 +43,11 @@ public:
         this->firIn = this->firOut = nullptr;
     }
 
-    Node(int data, vector<string> *attributes) {
+    Node(int data, vector<string> &attributes) {
         this->data = data;
         this->tarjan = this->bfs = this->reverse_bfs = false;
         this->firIn = this->firOut = nullptr;
-        this->attributes = *attributes;
+        this->attributes = attributes;
     }
 };
 
@@ -58,10 +58,8 @@ struct Graph {
     map<int, Node*> nodes;
 };
 
-class LabeledGraphList {
-public:
+struct LabeledGraphList {
     map<string, Graph> graphs;
-    explicit LabeledGraphList(vector<string> labels);
 };
 
 void two_hop_label(Graph*);
@@ -72,7 +70,7 @@ void combine_scc_node(Graph*, vector<vector<int> >&);
 bool query(Graph*, int outNodeNum, int inNodeNum);
 void search_out_node(Graph*, Node*);
 void search_in_node(Graph*, Node*);
-
+void read_labeling_graph(char*);
 void input_and_query(Graph *graph);
 bool constrainedQuery(Graph &, LabeledGraphList &, int outNodeNum, int inNodeNum, vector<string>& labels);
 
@@ -100,5 +98,15 @@ inline Node* init_inexistent_node(Graph &graph, int nodeNum)
 
     return graph.nodes[nodeNum];
 }
+
+inline Node* init_inexistent_label_node(Graph &graph, int nodeNum, vector<string>& attributes)
+{
+    if (graph.nodes[nodeNum] == nullptr) {
+        graph.nodes[nodeNum] = new Node(nodeNum, attributes);
+    }
+    return graph.nodes[nodeNum];
+}
+
+
 
 #endif //N_2_HOP_LABELS_H
