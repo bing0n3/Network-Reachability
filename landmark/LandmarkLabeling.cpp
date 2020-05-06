@@ -110,6 +110,7 @@ bool LandmarkLabeling::try_insert(int s, int v, LabelSet ls) {
        tuple.second.push_back(ls);
        return true;
    }
+    return true;
 }
 
 void LandmarkLabeling::forwardprop(int s, int v, LabelSet ls) {
