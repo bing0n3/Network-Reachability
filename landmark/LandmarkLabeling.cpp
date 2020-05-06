@@ -32,6 +32,7 @@ vector<int> findINOUTDegree(vector<vector<int>> adjList) {
 
 LandmarkLabeling::LandmarkLabeling(vector<vector<int> > G, vector<LabelSet> L, int k){
     createIndex(G, L, k);
+    this->G_label = vector<LabelSet>(L);
 }
 
 

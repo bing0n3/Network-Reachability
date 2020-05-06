@@ -20,20 +20,16 @@ private:
     vector<vector<pair<int, vector<LabelSet>>>> Ind;
     vector<bool> indexed;
     vector<int> landmarks;
-    bool compressedQuery(int, int);
     void LabeledBFSPerVertex(int);
     bool try_insert(int, int, LabelSet);
     void forwardprop(int s, int v, LabelSet ls);
 public:
     LandmarkLabeling();
     LandmarkLabeling(vector<vector<int> >, vector<LabelSet>, int);
-    LandmarkLabeling(vector<vector<int> >);
     virtual ~LandmarkLabeling();
     virtual void createIndex(vector<vector<int> >&, vector<LabelSet>&, int );
     virtual bool query(int, int, LabelSet);
     virtual bool queryLandmark(int, int, LabelSet);
-
-    long long indexSize();
 };
 
 
