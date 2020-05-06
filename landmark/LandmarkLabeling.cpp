@@ -93,7 +93,7 @@ bool LandmarkLabeling::try_insert(int s, int v, LabelSet ls) {
 
     if (this->Ind[s].find(v) != this->Ind[s].end()) {
         vector<LabelSet> &ls_vec = this->Ind[s][v];
-        for (auto ls2 = ls_vec.begin(); ls2 != ls_vec.end(); ls++) {
+        for (auto ls2 = ls_vec.begin(); ls2 != ls_vec.end(); ls2++) {
             bool b1 = isLabelSubset(ls, *ls2);
             bool b2 = !isLabelSubset(*ls2, ls);
             if (b1) {
