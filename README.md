@@ -1,8 +1,10 @@
-# Network-Reachability
+# Fast Estimation of Reachability with Label Constraint
 
-Fast Estimation of Reachability with Label Constraints Input: A node-labeled directed graph G, a pair of nodes s and t in G, and a set of node labels L.
+Fast Estimation of Reachability with Label Constraints 
 
-Question: Design an algorithm to answer the reachability query Q(s, t, G, L), which output “yes” if there exists a path from s to t, and all the nodes it passes has a label from the set L.
+Input: A node-labeled directed graph G, a pair of nodes s and t in G, and a set of node labels L, Q(s, t, G, L).
+
+Output “yes” if there exists a path from s to t, and all the nodes it passes has a label from the set L.
 
 2-hop: a eact exact algorithm and make use of 2-hop cover/index to optimize the query.
 
