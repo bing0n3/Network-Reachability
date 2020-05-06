@@ -63,6 +63,15 @@ void getSCCGraph(vector<vector<int> > &G, vector<vector<int> > *SCCGraph, vector
 
 // is  l2 is a subset of l1
 inline bool isLabelSubset(LabelSet ls1, LabelSet ls2){
-    return ((ls2 & ls1) == ls2);
+    return ((ls1& ls2) == ls1);
 }
+
+inline LabelSet labelIDToLabelSet(unsigned int id)
+{
+    // used by a graph to change labelIDs from input to a Labelset
+    // e.g. (LabelID) 0 -> (LabelSet) 0001
+    return (1 << id);
+}
+
+
 #endif //NETWORK_LANDMARKLABELING_H

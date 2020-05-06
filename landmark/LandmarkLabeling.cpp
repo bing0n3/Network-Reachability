@@ -45,7 +45,7 @@ void LandmarkLabeling::LandmarkLabeling::createIndex(vector<vector<int> > &G, ve
 
     this->Ind = vector<map<int, vector<LabelSet>>>(this->V);
     for (int i = 0; i < k; i++){
-
+        cout << i << endl;
         const int start = order[i];
         this->Ind[start] = map<int, vector<LabelSet>>();
         this->landmarks[start] = i;
@@ -76,6 +76,9 @@ void LandmarkLabeling::LabeledBFSPerVertex(int s) {
             continue;
         }
         for (auto w:this->G[v1]) {
+            if (w == s) {
+                continue;
+            }
             BitEntry t2;
             t2.p = w;
             t2.ls = ls1 | this->G_label[w];
@@ -92,15 +95,19 @@ bool LandmarkLabeling::try_insert(int s, int v, LabelSet ls) {
     }
 
     if (this->Ind[s].find(v) != this->Ind[s].end()) {
-        vector<LabelSet> &ls_vec = this->Ind[s][v];
-        for (auto ls2 = ls_vec.begin(); ls2 != ls_vec.end(); ls2++) {
-            bool b1 = isLabelSubset(ls, *ls2);
-            bool b2 = !isLabelSubset(*ls2, ls);
-            if (b1) {
+
+        for (int k = 0; k < Ind[s][v].size(); k++) {
+            LabelSet ls2 = this->Ind[s][v].at(k);
+            bool b1 = isLabelSubset(ls, ls2);
+            bool b2 = isLabelSubset(ls2, ls);
+//            cout << "tryInsertLabelSet loop ls=" <<ls << ",ls2=" << *ls2 << endl;
+//            cout << "tryInsertLabelSet loop b=" << b1 << ",b2=" << b2 << endl;
+            if (b2) {
                 return false;
             }
-            if (!b2) {
-                ls_vec.erase(ls2);
+            if (!b1) {
+                this->Ind[s][v].erase(this->Ind[s][v].begin()+k);
+                k--;
             }
         }
     }
@@ -145,7 +152,7 @@ bool LandmarkLabeling::query(int s, int t, LabelSet ls) {
             if (accessed[w]) {
                 continue;
             }
-            if (isLabelSubset(ls, this->G_label[w])) {
+            if (isLabelSubset(this->G_label[w], ls)) {
                 qt.push(w);
             }
         }
@@ -156,7 +163,7 @@ bool LandmarkLabeling::query(int s, int t, LabelSet ls) {
 bool LandmarkLabeling::queryLandmark(int s, int t, LabelSet ls){
     vector<LabelSet> ls_vec = this->Ind[s][t];
     for (const auto &ls2: ls_vec) {
-        if(isLabelSubset(ls, ls2)) {
+        if(isLabelSubset(ls2, ls)) {
             return true;
         }
     }
