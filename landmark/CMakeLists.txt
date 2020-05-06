@@ -7,4 +7,4 @@ include_directories(.)
 
 add_executable(landmark
         LandmarkLabeling.cpp
-        LandmarkLabeling.h)
+        LandmarkLabeling.h benchmark.cpp)

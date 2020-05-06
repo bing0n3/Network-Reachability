@@ -6,14 +6,12 @@
 #include <stack>
 #include <algorithm>
 #include <queue>
+#include <iostream>
 
-bool isLabelSubset(LabelSet ls1, LabelSet ls2){
-    return ((ls1 & ls2) == ls1);
-}
 
 
 vector<int> findINOUTDegree(vector<vector<int>> adjList) {
-    vector<int> in, out, total;
+    vector<int> in(adjList.size()), out(adjList.size()), total(adjList.size());
 
     for (int i = 0; i < adjList.size(); i++) {
         vector<int> list = adjList.at(i);
@@ -31,27 +29,26 @@ vector<int> findINOUTDegree(vector<vector<int>> adjList) {
 }
 
 LandmarkLabeling::LandmarkLabeling(vector<vector<int> > G, vector<LabelSet> L, int k){
-    createIndex(G, L, k);
     this->G_label = vector<LabelSet>(L);
+    createIndex(G, L, k);
 }
 
 
 void LandmarkLabeling::LandmarkLabeling::createIndex(vector<vector<int> > &G, vector<LabelSet>& L, int k) {
 
-
+    this->G = G;
     this->V = this->G.size();
     this->landmarks = vector<int>(this->V, -1);
-    this->indexed = vector<bool>(this->V);
-
+    this->indexed = vector<bool>(this->V, false);
     vector<int> order = findINOUTDegree(G);
     sort(order.begin(), order.end(), greater<>());
 
-
-    for (int i = 0; i < k; k++){
+    this->Ind = vector<map<int, vector<LabelSet>>>(this->V);
+    for (int i = 0; i < k; i++){
 
         const int start = order[i];
-        this->Ind[start] = vector<pair<int, vector<LabelSet>>>();
-        this->landmarks[i] = i;
+        this->Ind[start] = map<int, vector<LabelSet>>();
+        this->landmarks[start] = i;
         // LabeledBFSPerVertex
         LabeledBFSPerVertex(start);
     }
@@ -90,27 +87,24 @@ void LandmarkLabeling::LabeledBFSPerVertex(int s) {
 
 
 bool LandmarkLabeling::try_insert(int s, int v, LabelSet ls) {
-    if (s != v) {
+    if (s == v) {
         return true;
     }
 
-   for (auto &tuple: this->Ind[s]) {
-       if (tuple.first != v) {
-           continue;
-       }
-       for (auto ls2 = tuple.second.begin(); ls2 != tuple.second.end(); ls++) {
-           bool b1 = isLabelSubset(ls, *ls2);
-           bool b2 = !isLabelSubset(*ls2, ls);
-           if (b1) {
-               return false;
-           }
-           if (!b2) {
-               tuple.second.erase(ls2);
-           }
-       }
-       tuple.second.push_back(ls);
-       return true;
-   }
+    if (this->Ind[s].find(v) != this->Ind[s].end()) {
+        vector<LabelSet> &ls_vec = this->Ind[s][v];
+        for (auto ls2 = ls_vec.begin(); ls2 != ls_vec.end(); ls++) {
+            bool b1 = isLabelSubset(ls, *ls2);
+            bool b2 = !isLabelSubset(*ls2, ls);
+            if (b1) {
+                return false;
+            }
+            if (!b2) {
+                ls_vec.erase(ls2);
+            }
+        }
+    }
+    this->Ind[s][v].push_back(ls);
     return true;
 }
 
@@ -133,9 +127,11 @@ bool LandmarkLabeling::query(int s, int t, LabelSet ls) {
     vector<bool> accessed(this->V, false);
     queue<int> qt;
     qt.push(s);
+
     while (!qt.empty()) {
         int v = qt.front();
-        accessed[v] = false;
+        qt.pop();
+        accessed[v] = true;
         if (v == t) {
             return true;
         }
@@ -154,20 +150,16 @@ bool LandmarkLabeling::query(int s, int t, LabelSet ls) {
             }
         }
     }
-
     return false;
 }
 
 bool LandmarkLabeling::queryLandmark(int s, int t, LabelSet ls){
-    for (const auto& tuple: this->Ind[s]) {
-       if (tuple.first == t) {
-           for (const auto &ls2: tuple.second) {
-               if(isLabelSubset(ls, ls2)) {
-                   return true;
-               }
-           }
-       }
-        return false;
+    vector<LabelSet> ls_vec = this->Ind[s][t];
+    for (const auto &ls2: ls_vec) {
+        if(isLabelSubset(ls, ls2)) {
+            return true;
+        }
     }
+
     return false;
 }

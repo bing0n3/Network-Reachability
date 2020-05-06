@@ -17,7 +17,7 @@ private:
     vector<vector<int> > G;
     vector<LabelSet> G_label;
     long long V;
-    vector<vector<pair<int, vector<LabelSet>>>> Ind;
+    vector<map<int, vector<LabelSet>>> Ind;
     vector<bool> indexed;
     vector<int> landmarks;
     void LabeledBFSPerVertex(int);
@@ -26,7 +26,7 @@ private:
 public:
     LandmarkLabeling();
     LandmarkLabeling(vector<vector<int> >, vector<LabelSet>, int);
-    virtual ~LandmarkLabeling();
+//    virtual ~LandmarkLabeling();
     virtual void createIndex(vector<vector<int> >&, vector<LabelSet>&, int );
     virtual bool query(int, int, LabelSet);
     virtual bool queryLandmark(int, int, LabelSet);
@@ -60,4 +60,9 @@ struct PQBitEntries
 
 void getSCCGraph(vector<vector<int> > &G, vector<vector<int> > *SCCGraph, vector<int> *table);
 
+
+// is  l2 is a subset of l1
+inline bool isLabelSubset(LabelSet ls1, LabelSet ls2){
+    return ((ls2 & ls1) == ls2);
+}
 #endif //NETWORK_LANDMARKLABELING_H
