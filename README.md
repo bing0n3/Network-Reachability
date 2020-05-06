@@ -6,9 +6,12 @@ Input: A node-labeled directed graph G, a pair of nodes s and t in G, and a set 
 
 Output “yes” if there exists a path from s to t, and all the nodes it passes has a label from the set L.
 
-2-hop: a eact exact algorithm and make use of 2-hop cover/index to optimize the query.
 
-landmark index: an approximate query processing strategy use landmark index to
+The most of Label Constrainted Reachbility Query Algotihms are designed to solve edge-labeled problem. In this project, we focus on solve node-labled problem. We proposed two soultion based on 2-hop cover and landmark index:
+
+**2-hop**: a eact exact algorithm and make use of 2-hop cover/index to optimize the query.
+
+**landmark index**: an approximate query processing strategy use landmark index to
 opoptimize
 
 ## References
