@@ -29,6 +29,7 @@ struct Edge {
     }
 };
 
+
 class Node {
 public:
     bool tarjan;
@@ -37,7 +38,6 @@ public:
     int data;
     vector<int> inNodes, outNodes;
     Edge *firIn, *firOut;
-    vector<string> attributes;
     LabelSet ls;
 
     Node(int data) {
@@ -46,37 +46,27 @@ public:
         this->firIn = this->firOut = nullptr;
     }
 
-    Node(int data, vector<string> &attributes) {
+    Node(int data, LabelSet ls) {
         this->data = data;
         this->tarjan = this->bfs = this->reverse_bfs = false;
         this->firIn = this->firOut = nullptr;
-        this->attributes = attributes;
+        this->ls = ls;
     }
 };
 
 struct Graph {
-    int nodeNum, edgeNum;
-    map<string, int> numberMap;
-    map<int, string> nameMap;
     map<int, Node*> nodes;
 };
 
-struct LabeledGraphList {
-    map<string, Graph> graphs;
-};
+map<LabelSet, Graph> typedef LabeledGraphList;
 
 void two_hop_label(Graph*);
 
-void generate_one_label_index(LabeledGraphList &graphs);
 void tarjan(Graph*,Node*, map<int, int>&, map<int, int>&, stack<int>&, vector<vector<int> >&, map<int, bool>&);
 void combine_scc_node(Graph*, vector<vector<int> >&);
 bool query(Graph*, int outNodeNum, int inNodeNum);
 void search_out_node(Graph*, Node*);
 void search_in_node(Graph*, Node*);
-void read_labeling_graph(char*);
-void input_and_query(Graph *graph);
-bool constrainedQuery(Graph &, LabeledGraphList &, int outNodeNum, int inNodeNum, vector<string>& labels);
-vector<int> neighbors_with_diff_label(Graph& graph, Node* node, vector<string>&);
 
 inline void insert_edge(Node* node, Edge* edge)
 {
@@ -102,15 +92,54 @@ inline Node* init_inexistent_node(Graph &graph, int nodeNum)
     return graph.nodes[nodeNum];
 }
 
-inline Node* init_inexistent_label_node(Graph &graph, int nodeNum, vector<string>& attributes)
+inline Node* init_inexistent_label_node(Graph &graph, int nodeNum, LabelSet ls)
 {
     if (graph.nodes[nodeNum] == nullptr) {
-        graph.nodes[nodeNum] = new Node(nodeNum, attributes);
+        graph.nodes[nodeNum] = new Node(nodeNum, ls);
     }
     return graph.nodes[nodeNum];
 }
 
-int cal_graph_size(Graph &graph);
+inline int cal_graph_size(Graph &graph) {
+    int total;
+    for (auto node: graph.nodes) {
+        for (Edge *edge = node.second->firOut; edge != nullptr; edge = edge->headLink) {
+            total += sizeof(int);
+        }
+    }
+    return total;
+}
 
-vector<pair<pair<int, int>, vector<string>>> read_query(string file_name);
+
+class HopLabling {
+public:
+    Graph G;
+    LabeledGraphList G_set;
+    HopLabling(vector<vector<int>> graph, vector<LabelSet> ls_set, vector<LabelSet> ls_kind){
+        buildGraph(graph, ls_set, ls_kind);
+        generate_one_label_index();
+    }
+    void buildGraph(vector<vector<int>>, vector<LabelSet>, vector<LabelSet>);
+    bool queryNaive(int, int, LabelSet);
+private:
+    vector<LabelSet> labels;
+    void generate_one_label_index();
+    int cal_graph_index_size();
+    static void two_hop_label(Graph* graph);
+    vector<int> neighbors_with_diff_label(Node *node, LabelSet ls);
+};
+
+// is  l2 is a subset of l1
+inline bool isLabelSubset(LabelSet ls1, LabelSet ls2){
+return ((ls1& ls2) == ls1);
+}
+
+inline LabelSet labelIDToLabelSet(unsigned int id)
+{
+    // used by a graph to change labelIDs from input to a Labelset
+    // e.g. (LabelID) 0 -> (LabelSet) 0001
+    return (1 << id);
+}
+
+
 #endif //N_2_HOP_LABELS_H

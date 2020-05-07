@@ -1,5 +1,6 @@
 import random
 import math
+import numpy as np
 
 
 def read_file(file_name, L):
@@ -36,11 +37,18 @@ def read_file(file_name, L):
 
         # print(v_dict, countNum)
         gen_adj_list(countNum, adjList, file_name)
-        gen_label_list(countNum, L, file_name)
+        labelList = gen_label_list(countNum, L, file_name)
+        gen_for_2_hop(file_name, labelList, edgeList)
+        gen_query(file_name, countNum, L)
 
 
-def gen_for_2_hop():
-    pass
+def gen_for_2_hop(file_name, labelList, edgeList):
+
+    with open(file_name + "2-hop", "w") as f:
+        for i, l in enumerate(labelList):
+            f.write("v %d %d\n" % (i, l))
+        for e in edgeList:
+            f.write("e %d %d\n" % (e[0], e[1]))
 
 
 def gen_adj_list(countNum, adjList, filename):
@@ -82,9 +90,23 @@ def gen_label_list(vertex_num, L, filename):
     return v_l
 
 
-def gen_query(countNum, L):
+def gen_query(filename, countNum, L):
 
-    pass
+    q1 = np.random.randint(countNum, size=100000)
+    q2 = np.random.randint(countNum, size=100000)
+
+    exist = random.uniform(0, 1)
+
+    with open(filename + "_query_" + str(L), "w") as f:
+        for i in range(len(q1)):
+            line = "%d %d" % (q1[i], q2[i])
+            ls = []
+            for j in range(L):
+                exist = random.uniform(0, 1)
+                if exist > 0.5:
+                    ls.append(str(j))
+
+            f.write("%s %s\n" % (line, " ".join(ls)))
 
 
 def try_insert(v_dict, v, countNum):
@@ -96,4 +118,4 @@ def try_insert(v_dict, v, countNum):
 
 
 if __name__ == "__main__":
-    read_file("./soc-advogato.edges", 5)
+    read_file("./dataset/soc-google", 5)

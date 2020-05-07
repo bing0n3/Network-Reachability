@@ -1,5 +1,6 @@
 #include "2-hop-labels.h"
 #include <sstream>
+#include <utility>
 
 
 // constructor for graphlist for each label/
@@ -7,145 +8,76 @@
 
 
 
-int main(int argc, char *argv[]) {
-    if (argv[1] == nullptr) {
-        cout << "Usage: ./a.out <filename>" << endl;
-        exit(1);
+void HopLabling::buildGraph(vector<vector<int> > graph, vector<LabelSet> ls_set, vector<LabelSet> ls_kind) {
+    this->labels = std::move(ls_kind);
+    // build G_set
+    for (auto l: labels) {
+        this->G_set[l] = Graph();
     }
 
-    read_labeling_graph(argv[1]);
-}
-
-void read_labeling_graph(char *argv) {
-    Graph graph;
-    Node *inNode = nullptr, *outNode = nullptr;
-    LabeledGraphList graphsList;
-    fstream newfile;
-    newfile.open(argv, ios::in);
-    cout << "Loading data from file " << argv << "..." << endl;
-
-    if (newfile.is_open()) {
-        string tp;
-        while (getline(newfile, tp)) {
-            stringstream ssin(tp);
-
-            string arr[3];
-            int i = 0;
-            while (ssin.good() && i < 3){
-                ssin >> arr[i];
-                ++i;
+    // build vertex
+    for (int i = 0; i < ls_set.size(); i++) {
+        init_inexistent_label_node(this->G, i, ls_set[i]);
+        for (auto l :labels) {
+            // if vertex have labels
+            if (isLabelSubset(l, ls_set[i])) {
+                init_inexistent_label_node(this->G_set[l], i, ls_set[i]);
             }
+        }
+    }
 
-            if (arr[0] == "v") {
-                vector<string> label({arr[2]});
-                // initial node with label
-                if (graphsList.graphs.find(arr[2]) == graphsList.graphs.end()) {
-                    Graph new_graph =  Graph();
-                    graphsList.graphs[arr[2]] = new_graph;
-                    init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[1]), label);
-                } else {
-                    init_inexistent_label_node(graphsList.graphs[arr[2]], stoi(arr[1]), label);
-                }
-                init_inexistent_label_node(graph, stoi(arr[1]), label);
-            } else if (arr[0] == "e") {
-                // add edge to graph
-                int outNodeNum = stoi(arr[1]);
-                int inNodeNum = stoi(arr[2]);
+    // build edge
+    for (int i = 0; i < graph.size(); i++) {
+        int outNodeNum = i;
+        for (int inNodeNum : graph[i]) {
+            Node *outNode = this->G.nodes[outNodeNum];
+            Node *inNode = this -> G.nodes[inNodeNum];
 
-                outNode = graph.nodes[outNodeNum];
-                inNode = graph.nodes[inNodeNum];
-
-                Edge *edge = new Edge(outNodeNum , inNodeNum);
-                insert_edge(graph.nodes[outNodeNum], edge);
-                insert_reverse_edge(graph.nodes[inNodeNum], edge);
-                // iterate labels
-
-                vector<string> out_vec(outNode->attributes);
-                vector<string> in_vec(inNode->attributes);
-                vector<string> result;
-
-                set_intersection(in_vec.begin(), in_vec.end(),
-                        out_vec.begin(), out_vec.end(),
-                        back_inserter(result));
+            Edge *edge = new Edge(outNodeNum, inNodeNum);
+            insert_edge(outNode,  edge);
+            insert_reverse_edge(inNode, edge);
 
 
-                if (!result.empty()) {
-                    for (const auto& label: result) {
-                        edge = new Edge(outNodeNum , inNodeNum);
-                        insert_edge(graphsList.graphs[label].nodes[outNodeNum], edge);
-                        insert_reverse_edge(graphsList.graphs[label].nodes[inNodeNum], edge);
-                    }
+            LabelSet combine_ls = outNode->ls & inNode->ls;
+
+            if (combine_ls == 0) {
+                continue;
+            }
+            for (auto ls: this->labels) {
+                if (isLabelSubset(ls, combine_ls)) {
+                    edge = new Edge(outNodeNum, inNodeNum);
+                    insert_edge(this->G_set[ls].nodes[outNodeNum], edge);
+                    insert_reverse_edge(this->G_set[ls].nodes[inNodeNum], edge);
                 }
             }
         }
     }
-//    Graph *old_graph = &graph;
-//    two_hop_label(&graph);
-    clock_t start = clock();
-    generate_one_label_index(graphsList);
-    clock_t finish = clock();
-    cout << "Total time: " << float( (finish-start)) /CLOCKS_PER_SEC<< " seconds" << endl;
+}
 
-//    vector<string> ls({"0", "1", "3", "4"});
-//    constrainedQuery(graph, graphsList, 4180, 3294, ls);
 
-    start = clock();
+void HopLabling::generate_one_label_index() {
+    int total = 0;
+    time_t start = clock();
+    for (auto &graph: this->G_set) {
+        this->two_hop_label(&graph.second);
+    }
+    time_t end = clock();
+    cout << "Build Index Total Time: " << (float)(end-start)/CLOCKS_PER_SEC << " seconds" << endl;
+}
 
-    stringstream ss;
-    stringstream fs;
-    stringstream rs;
-    auto q_set = read_query("/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges_query_5");
-    int i = 0;
-    for (; i < q_set.size(); i++) {
-        if (i % 1000 == 0) {
-            finish = clock();
-            ss << "Run " << i <<  " Total time: " << float( (finish-start)) /CLOCKS_PER_SEC<< " seconds\n";
-            fs << i << " " << float((finish - start)) / CLOCKS_PER_SEC << "\n";
+int HopLabling::cal_graph_index_size() {
+    int total = 0;
+    for (auto &graph: this->G_set) {
+        for (auto &cur_node: graph.second.nodes) {
+            for (Edge *edge = cur_node.second->firOut; edge != nullptr; edge = edge->headLink)
+                total += sizeof(int);
         }
-        pair<int, int> q_pair = q_set[i].first;
-        vector<string> ls = q_set[i].second;
-
-        rs  << constrainedQuery(graph, graphsList, q_pair.first, q_pair.second, ls) << "\n";
     }
-    finish = clock();
-    ss << "Run " << i <<  " Total time: " << float( (finish-start)) /CLOCKS_PER_SEC<< " seconds\n";
-    fs << i << " " << float((finish - start)) / CLOCKS_PER_SEC << "\n";
-    cout << ss.str() << endl;
-
-    fstream result_filel;
-    result_filel.open("soc-advogato-2-hop.txt", ios::out);
-    result_filel << fs.str();
-    result_filel.close();
-
-    fstream rs_f;
-    rs_f.open("soc-advogato-2-hop.result", ios::out);
-    rs_f << rs.str();
-    rs_f.close();
-
-}
-
-void generate_one_label_index(LabeledGraphList &graphs) {
-    int total = 0;
-    for (auto& graph: graphs.graphs) {
-        two_hop_label(&graph.second);
-        total += cal_graph_size(graph.second);
-    }
-    cout << "Index size " <<total << endl;
-}
-
-int cal_graph_size(Graph& graph) {
-    int total = 0;
-
-    for (auto& cur_node: graph.nodes) {
-        for (Edge *edge = cur_node.second->firOut; edge != nullptr; edge = edge->headLink)
-            total += sizeof(int);
-    }
-
     return total;
 }
 
 
-void two_hop_label(Graph* graph) {
+void HopLabling::two_hop_label(Graph *graph) {
     clock_t start = clock();
 //    cout << "Finding scc..." << endl;
     map<int, int> def;
@@ -154,7 +86,7 @@ void two_hop_label(Graph* graph) {
     stack<int> st;
     vector<vector<int> > scc;
 
-    for (auto & node : graph->nodes) {
+    for (auto &node : graph->nodes) {
         if (!node.second->tarjan) {
             tarjan(graph, node.second, def, low, st, scc, stack_sign);
         }
@@ -164,7 +96,7 @@ void two_hop_label(Graph* graph) {
     combine_scc_node(graph, scc);
 
 //    cout << "Building 2-hops-label's data structure..." << endl;
-    for (auto & node : graph->nodes) {
+    for (auto &node : graph->nodes) {
         if (node.first == node.second->data) {
             search_out_node(graph, node.second);
             search_in_node(graph, node.second);
@@ -177,20 +109,7 @@ void two_hop_label(Graph* graph) {
 }
 
 
-void input_and_query(Graph* graph) {
-    cout << "Please enter query data(e.g. from 1 to 2 => 1 2)" << endl;
-    int inNodeNum, outNodeNum;
-    string inNodeID, outNodeID;
-    while (cin >> outNodeID >> inNodeID) {
-        outNodeNum = graph->numberMap[outNodeID];
-        inNodeNum = graph->numberMap[inNodeID];
-
-        cout << query(graph, outNodeNum, inNodeNum) << endl;
-        cout << "Please enter query data(e.g. from 1 to 2 => 1 2)" << endl;
-    }
-}
-
-void tarjan(Graph* graph, Node *node, map<int, int> &dfn, map<int, int> &low, stack<int> &st,
+void tarjan(Graph *graph, Node *node, map<int, int> &dfn, map<int, int> &low, stack<int> &st,
             vector<vector<int> > &scc, map<int, bool> &inStack) {
     if (node == nullptr) {
         cout << "In tarjan function: the variable 'node' is nullptr" << endl;
@@ -232,7 +151,7 @@ void tarjan(Graph* graph, Node *node, map<int, int> &dfn, map<int, int> &low, st
     }
 }
 
-void combine_scc_node(Graph* graph, vector<vector<int> > &scc) {
+void combine_scc_node(Graph *graph, vector<vector<int> > &scc) {
     for (auto &s : scc) {
         if (s.size() < 2) {
             continue;
@@ -357,65 +276,70 @@ bool query(Graph *graph, int outNodeNum, int inNodeNum) {
 
 
 // queryNaive
-bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, int inNodeNum, vector<string>& labels) {
+bool HopLabling::queryNaive(int outNodeNum, int inNodeNum, LabelSet ls) {
     stack<int> st = stack<int>({outNodeNum});
-    map<int,bool> accessed;
-    accessed[graph.nodes[outNodeNum]->data] = true;
 
-    while(!st.empty()) {
+    map<int, bool> accessed;
+    accessed[outNodeNum] = true;
+
+
+    if (!isLabelSubset(this->G.nodes[outNodeNum]->ls,ls)) {
+        return false;
+    }
+
+    while (!st.empty()) {
+        // pop first num
         int vNum = st.top();
         st.pop();
 
-        for (auto label : labels) {
-            // get graph
-            Graph &cur_graph = graphs.graphs[label];
 
-            //whether vertex exist in this graph
-            if(cur_graph.nodes.find(vNum) == cur_graph.nodes.end()) {
+        if (vNum == inNodeNum) {
+            return true;
+        }
+
+
+        // add neighboor
+        vector<int> neighbors = this->neighbors_with_diff_label(this->G.nodes[vNum], ls);
+        for (auto neighbor: neighbors) {
+            if (accessed[neighbor]) {
                 continue;
             }
-
-
-            vector<int> neighbors = neighbors_with_diff_label(graph, graph.nodes[vNum], labels);
-
-            for (auto neighbor: neighbors) {
-                if(!accessed[neighbor]) {
-                    accessed[neighbor] = true;
-                    st.push(neighbor);
-                }
-            }
-
-            // consider combined ssc
-            if (vNum != cur_graph.nodes[vNum]->data) {
-                accessed[cur_graph.nodes[vNum]->data] = true;
-
-                vector<int> neibors = neighbors_with_diff_label(graph, graph.nodes[cur_graph.nodes[vNum]->data], labels);
-                for (auto neighbor: neibors ){
-                    if(!accessed[neighbor]) {
-                        accessed[neighbor] = true;
-                        st.push(neighbor);
-                    }
-                }
-
-            }
-
-            Node *outNode = cur_graph.nodes[cur_graph.nodes[vNum]->data];
-
-            vector<int> out_vec(outNode->outNodes);
-
-            if(cur_graph.nodes.find(inNodeNum) !=cur_graph.nodes.end() && accessed[cur_graph.nodes[inNodeNum]->data]) {
+            st.push(neighbor);
+            accessed[neighbor] = true;
+            if (accessed[inNodeNum]) {
                 return true;
             }
+        }
 
-            for (auto vec : out_vec) {
-                if(!accessed[vec]) {
-                    accessed[vec] = true;
-                    st.push(vec);
+        // for loop find l in ls
+        for (auto l: this->labels) {
+            // if l is not ls's subset continue
+            if (!isLabelSubset(l, ls)) {
+                continue;
+            }
+            // get graph
+            Graph &cur_graph = this->G_set[l];
+
+
+            // convert to neighbor in label set
+            // for loop here u in L_out[label]
+            if (cur_graph.nodes[vNum] == nullptr) {
+                continue;
+            }
+            for (Edge *edge = cur_graph.nodes[cur_graph.nodes[vNum]->data]->firOut;
+                 edge != nullptr; edge = edge->headLink) {
+                int u = edge->tailVex;
+                if (accessed[u]) {
+                    continue;
                 }
-                if(cur_graph.nodes.find(inNodeNum) !=cur_graph.nodes.end() && accessed[cur_graph.nodes[inNodeNum]->data]) {
+                // u in tail
+                st.push(u);
+                accessed[u] = true;
+                if (accessed[inNodeNum]) {
                     return true;
                 }
             }
+
         }
 
     }
@@ -423,57 +347,15 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 }
 
 
-vector<int> neighbors_with_diff_label(Graph& graph, Node* node,   vector<string> &label_set){
-    map<int, bool> accessed;
-    vector<int>  result;
-    vector<string> node_attributes(node->attributes);
-
-    vector<string> lap, in_set;
-
+vector<int> HopLabling::neighbors_with_diff_label(Node *node, LabelSet ls) {
+    vector<int> result;
     for (Edge *edge = node->firOut; edge != nullptr; edge = edge->headLink) {
-
-        // is label has same lap
-        set_intersection(node_attributes.begin(), node_attributes.end(),
-                         graph.nodes[edge->tailVex]->attributes.begin(), graph.nodes[edge->tailVex]->attributes.end(),
-                         back_inserter(lap));
-
-        // is label in set?
-        set_intersection(label_set.begin(), label_set.end(),
-                        graph.nodes[edge->tailVex]->attributes.begin(), graph.nodes[edge->tailVex]->attributes.end(),
-                        back_inserter(in_set));
-        if (!accessed[edge->tailVex] && lap.empty() && !in_set.empty() ) {
+        LabelSet cur_node_ls = this->G.nodes[edge->tailVex]->ls;
+        //  current node label is a subset of label_set
+        if (isLabelSubset(cur_node_ls, ls)) {
             result.push_back(edge->tailVex);
         }
     }
 
     return result;
-}
-
-
-
-vector<pair<pair<int, int>,  vector<string>>> read_query(string file_name){
-    string line;
-    int V, E;
-    fstream newfile;
-    newfile.open(file_name,ios::in);
-
-    vector<pair<pair<int, int>, vector<string>>> query_set = vector<pair<pair<int, int>, vector<string>>>();
-
-    for (int i = 0; i < 10000; i++) {
-        int q1, q2;
-        string n;
-        stringstream ss;
-        getline(newfile, line);
-        ss << line;
-        ss >> q1 >> q2;
-        pair<int, int> q_pair = make_pair(q1, q2);
-        vector<string> ls;
-        while(ss >> n) {
-            ls.push_back(n);
-        }
-        query_set.emplace_back(q_pair, ls);
-    }
-
-    newfile.close();
-    return query_set;
 }
