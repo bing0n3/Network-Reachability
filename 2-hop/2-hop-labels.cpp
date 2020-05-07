@@ -60,6 +60,8 @@ void HopLabling::generate_one_label_index() {
     time_t start = clock();
     for (auto &graph: this->G_set) {
         this->two_hop_label(&graph.second);
+        cout << "Finish Build one Index" << endl;
+
     }
     time_t end = clock();
     cout << "Build Index Total Time: " << (float)(end-start)/CLOCKS_PER_SEC << " seconds" << endl;

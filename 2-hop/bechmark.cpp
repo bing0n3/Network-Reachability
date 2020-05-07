@@ -73,7 +73,7 @@ vector<pair<pair<int, int>, LabelSet>> read_query(string file_name) {
             query_set = vector<pair<pair<int,
             int>, LabelSet>>();
 
-    for (int i = 0;i < 10000; i++) {
+    for (int i = 0;i < 100000; i++) {
         int q1, q2;
         unsigned int n;
         stringstream ss;
@@ -98,10 +98,10 @@ int main() {
     cout << "Start to read file..." << endl;
     vector<vector<int>> graph;
 
-    graph = read_graph("/Users/bing0ne/Dropbox/Dev/network/dataset/soc-google_adj.data");
+    graph = read_graph("/Users/bing0ne/Dropbox/Dev/network/dataset/bio-CE-LC.edges_adj.data");
     set<LabelSet> kinds;
     vector<LabelSet> label_sets = read_label(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-google_label.data", kinds);
+            "/Users/bing0ne/Dropbox/Dev/network/dataset/bio-CE-LC.edges_label.data", kinds);
 
     cout << "Finish ReadFile" << endl;
 
@@ -110,7 +110,10 @@ int main() {
 
 
     vector<pair<pair<int, int>, LabelSet>> q_set = read_query(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-google_query_5");
+            "/Users/bing0ne/Dropbox/Dev/network/dataset/bio-CE-LC.edges_query_5");
+
+    int size = l.cal_graph_index_size();
+    cout << "Total Size is " << size  << endl;
 
 
     time_t start = clock();
@@ -132,15 +135,18 @@ int main() {
     }
     time_t end = clock();
     ss << "Run " << i <<  " Total time: " << float( (end-start)) /CLOCKS_PER_SEC<< " seconds\n";
+
+
     fs << i << " " << float((end - start)) / CLOCKS_PER_SEC << "\n";
     cout << ss.str() << endl;
 
+
     fstream result_filel;
-    result_filel.open("2-hop-soc-google.time", ios::out);
+    result_filel.open("2-hop-bio-CE-LC.edges.time", ios::out);
     result_filel << fs.str();
     result_filel.close();
 
-    result_filel.open("2-hop-soc-google.result", ios::out);
+    result_filel.open("2-hop-bio-CE-LC.edges.result", ios::out);
     result_filel << rs.str();
     result_filel.close();
 }

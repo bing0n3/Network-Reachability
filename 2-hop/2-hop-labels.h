@@ -120,11 +120,12 @@ public:
         generate_one_label_index();
     }
     void buildGraph(vector<vector<int>>, vector<LabelSet>, vector<LabelSet>);
+    int cal_graph_index_size();
     bool queryNaive(int, int, LabelSet);
 private:
     vector<LabelSet> labels;
     void generate_one_label_index();
-    int cal_graph_index_size();
+
     static void two_hop_label(Graph* graph);
     vector<int> neighbors_with_diff_label(Node *node, LabelSet ls);
 };

@@ -71,7 +71,7 @@ vector<pair<pair<int, int>,  LabelSet>> read_query(string file_name){
 
     vector<pair<pair<int, int>, LabelSet>> query_set = vector<pair<pair<int, int>, LabelSet>>();
 
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 1000000; i++) {
         int q1, q2;
         unsigned int n;
         stringstream ss;
@@ -97,15 +97,15 @@ int main() {
     cout << "Start to read file..." << endl;
     vector<vector<int>> graph;
 
-    graph = read_graph("/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges_adj.data");
+    graph = read_graph("/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges-1000-adj.data");
     vector<LabelSet> label_sets = read_label(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges_label.data");
+            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges-000-label.data");
 
     cout << "Finish ReadFile" << endl;
 
     clock_t start = clock();
 
-    LandmarkLabeling l =  LandmarkLabeling(graph, label_sets, 1271);
+    LandmarkLabeling l =  LandmarkLabeling(graph, label_sets, 1000);
     clock_t end = clock();
     cout << "Total time: " << float( (end-start)) /CLOCKS_PER_SEC<< " seconds" << endl;
 
@@ -114,7 +114,7 @@ int main() {
     cout << l.query(149, 3, labelIDToLabelSet(0)|labelIDToLabelSet(4)|labelIDToLabelSet(3)|labelIDToLabelSet(2)|labelIDToLabelSet(1)) << endl;
 
     vector<pair<pair<int, int>, LabelSet>> q_set = read_query(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges_query_5");
+            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges-1000-query-5");
 
 
     start = clock();
@@ -126,7 +126,7 @@ int main() {
 
     int i = 0;
     for (; i < q_set.size(); i++) {
-        if (i % 1000 == 0) {
+        if (i % 10000 == 0) {
             clock_t end = clock();
             ss << "Run " << i <<  " Total time: " << float( (end-start)) /CLOCKS_PER_SEC<< " seconds\n";
             fs << i << " " << float((end - start)) / CLOCKS_PER_SEC << "\n";
@@ -141,11 +141,11 @@ int main() {
     cout << ss.str() << endl;
 
     fstream result_filel;
-    result_filel.open("landmark-soc-advogato.time", ios::out);
+    result_filel.open("landmark-soc-advogato-1000.time", ios::out);
     result_filel << fs.str();
     result_filel.close();
 
-    result_filel.open("landmark-soc-advogato.result", ios::out);
+    result_filel.open("landmark-soc-advogato-1000.result", ios::out);
     result_filel << rs.str();
     result_filel.close();
 }
