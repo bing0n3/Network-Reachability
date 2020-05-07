@@ -30,6 +30,7 @@ public:
     virtual void createIndex(vector<vector<int> >&, vector<LabelSet>&, int );
     virtual bool query(int, int, LabelSet);
     virtual bool queryLandmark(int, int, LabelSet);
+    virtual int getIndexSize();
 };
 
 
@@ -45,6 +46,7 @@ typedef struct
 {
     LabelSet ls;
     int p;
+    int dist;
 }BitEntry;
 
 struct PQBitEntries
@@ -52,7 +54,7 @@ struct PQBitEntries
     bool operator()(BitEntry const & t1, BitEntry const & t2)
     {
         // return "true" if "p1" is ordered before "p2", for example:
-        return label_number_count(t1.ls) > label_number_count(t2.ls);
+        return t1.dist > t2.dist;
     }
 };
 
@@ -72,6 +74,7 @@ inline LabelSet labelIDToLabelSet(unsigned int id)
     // e.g. (LabelID) 0 -> (LabelSet) 0001
     return (1 << id);
 }
+
 
 
 #endif //NETWORK_LANDMARKLABELING_H

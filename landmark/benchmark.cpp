@@ -29,7 +29,6 @@ vector<vector<int> > read_graph(string file_name) {
         ss << line;
 
         while(ss >> n) {
-            n;
             G[i].push_back(n);
         }
     }
@@ -64,6 +63,34 @@ vector<LabelSet> read_label(string file_name) {
 }
 
 
+vector<pair<pair<int, int>,  LabelSet>> read_query(string file_name){
+    string line;
+    int V, E;
+    fstream newfile;
+    newfile.open(file_name,ios::in);
+
+    vector<pair<pair<int, int>, LabelSet>> query_set = vector<pair<pair<int, int>, LabelSet>>();
+
+    for (int i = 0; i < 100000; i++) {
+        int q1, q2;
+        unsigned int n;
+        stringstream ss;
+        getline(newfile, line);
+        ss << line;
+        ss >> q1 >> q2;
+        pair<int, int> q_pair = make_pair(q1, q2);
+        LabelSet ls;
+        while(ss >> n) {
+            ls = ls | labelIDToLabelSet(n);
+        }
+        query_set.emplace_back(q_pair, ls);
+    }
+
+    newfile.close();
+    return query_set;
+}
+
+
 
 int main() {
 
@@ -76,33 +103,49 @@ int main() {
 
     cout << "Finish ReadFile" << endl;
 
-    LandmarkLabeling l =  LandmarkLabeling(graph, label_sets, 3);
+    clock_t start = clock();
 
-    // node 1: 2,3
-//    graph.push_back(vector<int>({1, 2}));
-//    // node 2: 7,8
-//    graph.push_back(vector<int>({6, 7}));
-//    // node 3: 4
-//    graph.push_back(vector<int>({3}));
-//    // node 4: 5, 7
-//
-//    graph.push_back(vector<int>({4, 6}));
-//    // node 5: 6
-//    graph.push_back(vector<int>({5}));
-//    //node 6: 4
-//    graph.push_back(vector<int>({3}));
-//    //node 7:
-//    graph.push_back(vector<int>({}));
-//    //node 8:
-//    graph.push_back(vector<int>({}));
-//
-//    vector<LabelSet> labesets = vector<LabelSet>({
-//       0b01, 0b01, 0b01, 0b11, 0b01, 0b01, 0b01, 0b01
-//    });
-//
-//    LandmarkLabeling l =  LandmarkLabeling(graph, labesets, 3);
+    LandmarkLabeling l =  LandmarkLabeling(graph, label_sets, 1271);
+    clock_t end = clock();
+    cout << "Total time: " << float( (end-start)) /CLOCKS_PER_SEC<< " seconds" << endl;
+
+    cout << "Get Index Size" << l.getIndexSize()  << endl;
+    cout << l.query(149, 3, labelIDToLabelSet(0)) << endl;
+    cout << l.query(149, 3, labelIDToLabelSet(0)|labelIDToLabelSet(4)|labelIDToLabelSet(3)|labelIDToLabelSet(2)|labelIDToLabelSet(1)) << endl;
+
+    vector<pair<pair<int, int>, LabelSet>> q_set = read_query(
+            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges_query_5");
 
 
+    start = clock();
 
-//    cout << l.query(0, 3, 0b11) << endl;
+
+    stringstream ss;
+    stringstream fs;
+    stringstream rs;
+
+    int i = 0;
+    for (; i < q_set.size(); i++) {
+        if (i % 1000 == 0) {
+            clock_t end = clock();
+            ss << "Run " << i <<  " Total time: " << float( (end-start)) /CLOCKS_PER_SEC<< " seconds\n";
+            fs << i << " " << float((end - start)) / CLOCKS_PER_SEC << "\n";
+        }
+        pair<int, int> q_pair = q_set[i].first;
+        LabelSet ls = q_set[i].second;
+        rs << l.query(q_pair.first, q_pair.second, ls) << "\n";
+    }
+    end = clock();
+    ss << "Run " << i <<  " Total time: " << float( (end-start)) /CLOCKS_PER_SEC<< " seconds\n";
+    fs << i << " " << float((end - start)) / CLOCKS_PER_SEC << "\n";
+    cout << ss.str() << endl;
+
+    fstream result_filel;
+    result_filel.open("landmark-soc-advogato.time", ios::out);
+    result_filel << fs.str();
+    result_filel.close();
+
+    result_filel.open("landmark-soc-advogato.result", ios::out);
+    result_filel << rs.str();
+    result_filel.close();
 }

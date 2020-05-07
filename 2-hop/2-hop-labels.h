@@ -16,6 +16,8 @@
 
 using namespace std;
 
+unsigned int typedef LabelSet;
+
 struct Edge {
     int headVex, tailVex;
     Edge *headLink, *tailLink;
@@ -36,6 +38,7 @@ public:
     vector<int> inNodes, outNodes;
     Edge *firIn, *firOut;
     vector<string> attributes;
+    LabelSet ls;
 
     Node(int data) {
         this->data = data;
@@ -64,7 +67,7 @@ struct LabeledGraphList {
 
 void two_hop_label(Graph*);
 
-void generata_one_label_index(LabeledGraphList &graph);
+void generate_one_label_index(LabeledGraphList &graphs);
 void tarjan(Graph*,Node*, map<int, int>&, map<int, int>&, stack<int>&, vector<vector<int> >&, map<int, bool>&);
 void combine_scc_node(Graph*, vector<vector<int> >&);
 bool query(Graph*, int outNodeNum, int inNodeNum);
@@ -107,6 +110,7 @@ inline Node* init_inexistent_label_node(Graph &graph, int nodeNum, vector<string
     return graph.nodes[nodeNum];
 }
 
+int cal_graph_size(Graph &graph);
 
-
+vector<pair<pair<int, int>, vector<string>>> read_query(string file_name);
 #endif //N_2_HOP_LABELS_H

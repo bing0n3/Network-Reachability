@@ -23,6 +23,7 @@ void read_labeling_graph(char *argv) {
     fstream newfile;
     newfile.open(argv, ios::in);
     cout << "Loading data from file " << argv << "..." << endl;
+
     if (newfile.is_open()) {
         string tp;
         while (getline(newfile, tp)) {
@@ -37,7 +38,6 @@ void read_labeling_graph(char *argv) {
 
             if (arr[0] == "v") {
                 vector<string> label({arr[2]});
-//                cout << arr[0] << endl;
                 // initial node with label
                 if (graphsList.graphs.find(arr[2]) == graphsList.graphs.end()) {
                     Graph new_graph =  Graph();
@@ -81,23 +81,73 @@ void read_labeling_graph(char *argv) {
     }
 //    Graph *old_graph = &graph;
 //    two_hop_label(&graph);
-    generata_one_label_index(graphsList);
-    vector<string> queryLabel({"1","2"});
+    clock_t start = clock();
+    generate_one_label_index(graphsList);
+    clock_t finish = clock();
+    cout << "Total time: " << float( (finish-start)) /CLOCKS_PER_SEC<< " seconds" << endl;
 
-    cout << endl << "Result is " << constrainedQuery(graph, graphsList, 1, 6, queryLabel) << endl;
-//    cout << query(&graphsList.graphs["1"], 4, 6) << endl;
+//    vector<string> ls({"0", "1", "3", "4"});
+//    constrainedQuery(graph, graphsList, 4180, 3294, ls);
+
+    start = clock();
+
+    stringstream ss;
+    stringstream fs;
+    stringstream rs;
+    auto q_set = read_query("/Users/bing0ne/Dropbox/Dev/network/dataset/soc-advogato.edges_query_5");
+    int i = 0;
+    for (; i < q_set.size(); i++) {
+        if (i % 1000 == 0) {
+            finish = clock();
+            ss << "Run " << i <<  " Total time: " << float( (finish-start)) /CLOCKS_PER_SEC<< " seconds\n";
+            fs << i << " " << float((finish - start)) / CLOCKS_PER_SEC << "\n";
+        }
+        pair<int, int> q_pair = q_set[i].first;
+        vector<string> ls = q_set[i].second;
+
+        rs  << constrainedQuery(graph, graphsList, q_pair.first, q_pair.second, ls) << "\n";
+    }
+    finish = clock();
+    ss << "Run " << i <<  " Total time: " << float( (finish-start)) /CLOCKS_PER_SEC<< " seconds\n";
+    fs << i << " " << float((finish - start)) / CLOCKS_PER_SEC << "\n";
+    cout << ss.str() << endl;
+
+    fstream result_filel;
+    result_filel.open("soc-advogato-2-hop.txt", ios::out);
+    result_filel << fs.str();
+    result_filel.close();
+
+    fstream rs_f;
+    rs_f.open("soc-advogato-2-hop.result", ios::out);
+    rs_f << rs.str();
+    rs_f.close();
 
 }
 
-void generata_one_label_index(LabeledGraphList &graphs) {
+void generate_one_label_index(LabeledGraphList &graphs) {
+    int total = 0;
     for (auto& graph: graphs.graphs) {
         two_hop_label(&graph.second);
+        total += cal_graph_size(graph.second);
     }
+    cout << "Index size " <<total << endl;
 }
+
+int cal_graph_size(Graph& graph) {
+    int total = 0;
+
+    for (auto& cur_node: graph.nodes) {
+        for (Edge *edge = cur_node.second->firOut; edge != nullptr; edge = edge->headLink)
+            total += sizeof(int);
+    }
+
+    return total;
+}
+
 
 void two_hop_label(Graph* graph) {
     clock_t start = clock();
-    cout << "Finding scc..." << endl;
+//    cout << "Finding scc..." << endl;
     map<int, int> def;
     map<int, int> low;
     map<int, bool> stack_sign;
@@ -110,10 +160,10 @@ void two_hop_label(Graph* graph) {
         }
     }
 
-    cout << "Combining scc..." << endl;
+//    cout << "Combining scc..." << endl;
     combine_scc_node(graph, scc);
 
-    cout << "Building 2-hops-label's data structure..." << endl;
+//    cout << "Building 2-hops-label's data structure..." << endl;
     for (auto & node : graph->nodes) {
         if (node.first == node.second->data) {
             search_out_node(graph, node.second);
@@ -123,7 +173,7 @@ void two_hop_label(Graph* graph) {
 
     clock_t finish = clock();
 
-    cout << "Total time: " << (finish-start)/CLOCKS_PER_SEC << " seconds" << endl;
+//    cout << "Total time: " << (finish-start)/CLOCKS_PER_SEC << " seconds" << endl;
 }
 
 
@@ -329,8 +379,10 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
             vector<int> neighbors = neighbors_with_diff_label(graph, graph.nodes[vNum], labels);
 
             for (auto neighbor: neighbors) {
-                st.push(neighbor);
-                accessed[neighbor] = true;
+                if(!accessed[neighbor]) {
+                    accessed[neighbor] = true;
+                    st.push(neighbor);
+                }
             }
 
             // consider combined ssc
@@ -339,8 +391,10 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
 
                 vector<int> neibors = neighbors_with_diff_label(graph, graph.nodes[cur_graph.nodes[vNum]->data], labels);
                 for (auto neighbor: neibors ){
-                    accessed[neighbor] = true;
-                    st.push(neighbor);
+                    if(!accessed[neighbor]) {
+                        accessed[neighbor] = true;
+                        st.push(neighbor);
+                    }
                 }
 
             }
@@ -348,10 +402,6 @@ bool constrainedQuery(Graph &graph, LabeledGraphList &graphs, int outNodeNum, in
             Node *outNode = cur_graph.nodes[cur_graph.nodes[vNum]->data];
 
             vector<int> out_vec(outNode->outNodes);
-
-
-//            cout << out_vec[0];
-
 
             if(cur_graph.nodes.find(inNodeNum) !=cur_graph.nodes.end() && accessed[cur_graph.nodes[inNodeNum]->data]) {
                 return true;
@@ -397,4 +447,33 @@ vector<int> neighbors_with_diff_label(Graph& graph, Node* node,   vector<string>
     }
 
     return result;
+}
+
+
+
+vector<pair<pair<int, int>,  vector<string>>> read_query(string file_name){
+    string line;
+    int V, E;
+    fstream newfile;
+    newfile.open(file_name,ios::in);
+
+    vector<pair<pair<int, int>, vector<string>>> query_set = vector<pair<pair<int, int>, vector<string>>>();
+
+    for (int i = 0; i < 10000; i++) {
+        int q1, q2;
+        string n;
+        stringstream ss;
+        getline(newfile, line);
+        ss << line;
+        ss >> q1 >> q2;
+        pair<int, int> q_pair = make_pair(q1, q2);
+        vector<string> ls;
+        while(ss >> n) {
+            ls.push_back(n);
+        }
+        query_set.emplace_back(q_pair, ls);
+    }
+
+    newfile.close();
+    return query_set;
 }

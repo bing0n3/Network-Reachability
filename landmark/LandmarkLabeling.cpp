@@ -10,8 +10,9 @@
 
 
 
-vector<int> findINOUTDegree(vector<vector<int>> adjList) {
-    vector<int> in(adjList.size()), out(adjList.size()), total(adjList.size());
+vector<pair<int, int>> findINOUTDegree(vector<vector<int>> adjList) {
+    vector<int> in(adjList.size()), out(adjList.size());
+    vector<pair<int, int>> total;
 
     for (int i = 0; i < adjList.size(); i++) {
         vector<int> list = adjList.at(i);
@@ -22,7 +23,7 @@ vector<int> findINOUTDegree(vector<vector<int>> adjList) {
     }
 
     for (int i = 0; i < in.size(); i++) {
-        total[i] = in[i] + out[i];
+        total.push_back(make_pair(i, in[i] + out[i]));
     }
 
     return total;
@@ -32,7 +33,11 @@ LandmarkLabeling::LandmarkLabeling(vector<vector<int> > G, vector<LabelSet> L, i
     this->G_label = vector<LabelSet>(L);
     createIndex(G, L, k);
 }
-
+struct sort_pred {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.second > right.second;
+    }
+};
 
 void LandmarkLabeling::LandmarkLabeling::createIndex(vector<vector<int> > &G, vector<LabelSet>& L, int k) {
 
@@ -40,26 +45,32 @@ void LandmarkLabeling::LandmarkLabeling::createIndex(vector<vector<int> > &G, ve
     this->V = this->G.size();
     this->landmarks = vector<int>(this->V, -1);
     this->indexed = vector<bool>(this->V, false);
-    vector<int> order = findINOUTDegree(G);
-    sort(order.begin(), order.end(), greater<>());
+    vector<pair<int, int>> order = findINOUTDegree(G);
+    sort(order.begin(), order.end(), sort_pred());
 
     this->Ind = vector<map<int, vector<LabelSet>>>(this->V);
     for (int i = 0; i < k; i++){
-        cout << i << endl;
-        const int start = order[i];
+
+        const int start = order[i].first;
         this->Ind[start] = map<int, vector<LabelSet>>();
         this->landmarks[start] = i;
         // LabeledBFSPerVertex
         LabeledBFSPerVertex(start);
+        auto& a = this->Ind[149];
+//        cout << "build" << i << "th index" << endl;
     }
 }
 
 void LandmarkLabeling::LabeledBFSPerVertex(int s) {
     priority_queue<BitEntry, vector<BitEntry>, PQBitEntries> q;
+    vector<map<LabelSet, bool>> accessded(this->V);
+
     BitEntry t;
     t.p = s;
+    t.dist = 0;
     t.ls = 0;
     q.push(t);
+    accessded[t.p][t.ls] = true;
 
     while (!q.empty()) {
         BitEntry tr = q.top();
@@ -67,9 +78,13 @@ void LandmarkLabeling::LabeledBFSPerVertex(int s) {
         int ls1 = tr.ls;
         q.pop();
 
-        if (!try_insert(s, v1, ls1)) {
-            continue;
+        if (s != v1 ) {
+
+            if (!try_insert(s, v1, ls1)) {
+                continue;
+            }
         }
+        // if v1 has been indexed forwadprop
         if (this->indexed[v1]) {
             //forwardprop
             this->forwardprop(s, v1, ls1);
@@ -80,9 +95,25 @@ void LandmarkLabeling::LabeledBFSPerVertex(int s) {
                 continue;
             }
             BitEntry t2;
+            LabelSet ls2 = this->G_label[w];
+            LabelSet ls3 =ls1 | ls2;
+            int dist = tr.dist;
+
+            if (ls3 != ls1 || ls3 != ls2) {
+                dist += 1;
+            }
+
+            t2.dist = dist;
+
             t2.p = w;
-            t2.ls = ls1 | this->G_label[w];
+            t2.ls = ls3;
+
+            if (accessded[w].find(ls3) != accessded[w].end()) {
+                // exist
+                continue;
+            }
             q.push(t2);
+            accessded[w][ls3] = true;
         }
     }
     this->indexed[s] = true;
@@ -111,6 +142,7 @@ bool LandmarkLabeling::try_insert(int s, int v, LabelSet ls) {
             }
         }
     }
+
     this->Ind[s][v].push_back(ls);
     return true;
 }
@@ -120,7 +152,7 @@ void LandmarkLabeling::forwardprop(int s, int v, LabelSet ls) {
         int w = tuple.first;
         vector<LabelSet> ls_vector = tuple.second;
         for (auto ls2: ls_vector) {
-            // join labelset
+
             try_insert(s, w, ls | ls2);
         }
     }
@@ -136,6 +168,9 @@ bool LandmarkLabeling::query(int s, int t, LabelSet ls) {
     qt.push(s);
 
     while (!qt.empty()) {
+
+
+
         int v = qt.front();
         qt.pop();
         accessed[v] = true;
@@ -169,4 +204,15 @@ bool LandmarkLabeling::queryLandmark(int s, int t, LabelSet ls){
     }
 
     return false;
+}
+
+int LandmarkLabeling::getIndexSize() {
+
+    int total =0;
+    for (auto pair : this->Ind){
+        for  (auto &kv: pair) {
+            total += kv.second.size() * sizeof(LabelSet);
+        }
+    }
+    return total;
 }
