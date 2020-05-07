@@ -58,7 +58,7 @@ def gen_adj_list(countNum, adjList, filename, limit=None):
     with open(
         filename + ("-" + str(limit) + "-" if limit else "-") + "adj.data", "w"
     ) as f:
-        f.write("%d\n" % min(countNum, limit) if limit else countNum)
+        f.write("%d\n" % (min(countNum, limit) if limit else countNum))
         for l in lists:
             out_str = " ".join(str(x) for x in l)
             f.write("%s\n" % out_str)
@@ -82,7 +82,7 @@ def gen_label_list(vertex_num, L, filename, limit):
     with open(
         filename + ("-" + str(limit) + "-" if limit else "-") + "label.data", "w"
     ) as f:
-        f.write("%d\n" % min(vertex_num, limit) if limit else vertex_num)
+        f.write("%d\n" % (min(vertex_num, limit) if limit else vertex_num))
         for c_l in v_l:
             f.write("%d\n" % c_l)
 
@@ -119,4 +119,4 @@ def try_insert(v_dict, v, countNum):
 
 
 if __name__ == "__main__":
-    read_file("./dataset/soc-advogato.edges", 5, 2000)
+    read_file("dataset/soc-epinions.edges", 5)
