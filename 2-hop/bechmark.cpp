@@ -93,15 +93,21 @@ vector<pair<pair<int, int>, LabelSet>> read_query(string file_name) {
     return query_set;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argv[1] == nullptr) {
+        cout << "Usage: ./a.out <filename>" << endl;
+        exit(1);
+    }
+
+    string prefix = argv[1];
 
     cout << "Start to read file..." << endl;
     vector<vector<int>> graph;
 
-    graph = read_graph("/Users/bing0ne/Dropbox/Dev/network/dataset/fb-pages-public-figure.edges-adj.data");
+    graph = read_graph(prefix + "-adj.data");
     set<LabelSet> kinds;
     vector<LabelSet> label_sets = read_label(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/fb-pages-public-figure.edges-label.data", kinds);
+            prefix + "-label.data", kinds);
 
     cout << "Finish ReadFile" << endl;
 
@@ -110,7 +116,7 @@ int main() {
 
 
     vector<pair<pair<int, int>, LabelSet>> q_set = read_query(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/fb-pages-public-figure.edges-query-5");
+            prefix + "-query-5");
 
     int size = l.cal_graph_index_size();
     cout << "Total Size is " << size  << endl;
@@ -121,6 +127,8 @@ int main() {
     stringstream ss;
     stringstream fs;
     stringstream rs;
+
+    cout << "Starting query..." << endl;
 
     int i = 0;
     for (; i < q_set.size(); i++) {
@@ -142,11 +150,11 @@ int main() {
 
 
     fstream result_filel;
-    result_filel.open("2-hop-fb-pages-public-figure.time", ios::out);
+    result_filel.open("2-hop-"+prefix+".time", ios::out);
     result_filel << fs.str();
     result_filel.close();
 
-    result_filel.open("2-hop-fb-pages-public-figure.result", ios::out);
+    result_filel.open("2-hop-"+prefix+".result", ios::out);
     result_filel << rs.str();
     result_filel.close();
 }

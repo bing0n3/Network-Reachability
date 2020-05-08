@@ -92,14 +92,20 @@ vector<pair<pair<int, int>,  LabelSet>> read_query(string file_name){
 
 
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argv[1] == nullptr) {
+        cout << "Usage: ./a.out <filename>" << endl;
+        exit(1);
+    }
+
+    string prefix = argv[1];
 
     cout << "Start to read file..." << endl;
     vector<vector<int>> graph;
 
-    graph = read_graph("/Users/bing0ne/Dropbox/Dev/network/dataset/soc-epinions.edges-adj.data");
+    graph = read_graph(prefix + "-adj.data");
     vector<LabelSet> label_sets = read_label(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-epinions.edges-label.data");
+            prefix + "-label.data");
 
     cout << "Finish ReadFile" << endl;
 
@@ -114,7 +120,7 @@ int main() {
     cout << l.query(149, 3, labelIDToLabelSet(0)|labelIDToLabelSet(4)|labelIDToLabelSet(3)|labelIDToLabelSet(2)|labelIDToLabelSet(1)) << endl;
 
     vector<pair<pair<int, int>, LabelSet>> q_set = read_query(
-            "/Users/bing0ne/Dropbox/Dev/network/dataset/soc-epinions.edges-query-5");
+            prefix + "-query-5");
 
 
     start = clock();
@@ -141,11 +147,11 @@ int main() {
     cout << ss.str() << endl;
 
     fstream result_filel;
-    result_filel.open("landmark-soc-epinions.time", ios::out);
+    result_filel.open("landmark-"+prefix+".time", ios::out);
     result_filel << fs.str();
     result_filel.close();
 
-    result_filel.open("landmark-soc-epinions.result", ios::out);
+    result_filel.open("landmark-"+ prefix +".result", ios::out);
     result_filel << rs.str();
     result_filel.close();
 }
